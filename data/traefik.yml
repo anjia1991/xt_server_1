@@ -1,0 +1,37 @@
+entryPoints:
+  web:
+    address: ":8081"
+  websecure:
+    address: ":8443"
+    http:
+      tls: {}
+  traefik:
+    address: ":8080"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    directory: "/etc/traefik/dynamic"
+    watch: true
+
+api:
+  dashboard: true
+  insecure: true
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: "/certs/localhost.pem"
+        keyFile: "/certs/localhost-key.pem"
+
+# Add this section for access logging
+accessLog:
+  filePath: "/var/log/traefik/access.log"  
+  format: json 
+  fields:
+    defaultMode: keep
+    headers:
+      defaultMode: drop 

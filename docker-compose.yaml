@@ -1,4 +1,35 @@
 services:
+  traefik:
+    image: traefik:v3.1
+    command:
+      - --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.file.directory=/etc/traefik/dynamic  # Correct directory for dynamic config
+      - --providers.file.watch=true  # Watch for changes in dynamic config
+      - --entrypoints.web.address=:8081
+      - --entrypoints.websecure.address=:8443
+      - --entrypoints.traefik.address=:8080
+      - --entrypoints.websecure.http.tls=true
+      - --providers.file.filename=/etc/traefik/traefik.yml  # External configuration for TLS certificates
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik_dashboard.rule=Host(`localhost`)"
+      - "traefik.http.routers.traefik_dashboard.service=api@internal"
+      - "traefik.http.routers.traefik_dashboard.entrypoints=traefik"
+    ports:
+      - "8081:8081"  # HTTP
+      - "8443:8443"  # HTTPS
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Docker socket to detect running containers
+      - ./data/localhost.pem:/certs/localhost.pem  # Mount your certificate file
+      - ./data/localhost-key.pem:/certs/localhost-key.pem  # Mount your key file
+      - ./data/traefik.yml:/etc/traefik/traefik.yml  # Static configuration for TLS certificates
+      - ./data/dynamic:/etc/traefik/dynamic  # Mount the dynamic directory with configuration files
+      - ./data/logs:/var/log/traefik  # Mount the log directory
+    restart: unless-stopped  # Automatically restart unless stopped
+
   adminjs:
     build: .
     container_name: adminjs-container
@@ -44,10 +75,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    networks:
-      - app-network
     volumes:
-      - ./wait-for-mysql.sh:/wait-for-mysql.sh
+      - ./data/wait-for-mysql.sh:/wait-for-mysql.sh
     entrypoint: [ "sh", "/wait-for-mysql.sh" ]
 
   mysql:
@@ -65,16 +94,10 @@ services:
       retries: 5
     volumes:
       - db_data:/var/lib/mysql
-      - ./adminjs.sql:/docker-entrypoint-initdb.d/adminjs.sql
-      - ./mysql-init.sh:/docker-entrypoint-initdb.d/mysql-init.sh
-      - ./mysql-general-log.log:/tmp/mysql-general-log.log
-    networks:
-      - app-network
+      - ./data/adminjs.sql:/docker-entrypoint-initdb.d/adminjs.sql
+      - ./data/mysql-init.sh:/docker-entrypoint-initdb.d/mysql-init.sh
+      - ./data/mysql-general-log.log:/tmp/mysql-general-log.log
+
 
 volumes:
   db_data:
-
-
-networks:
-  app-network:
-    external: true
