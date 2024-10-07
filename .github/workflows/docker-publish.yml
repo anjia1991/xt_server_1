@@ -8,7 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      issues: write
+      packages: write
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -26,12 +30,6 @@ jobs:
       - name: Extract version number
         id: vars
         run: echo "VERSION=$(git describe --tags --always)" >> $GITHUB_ENV
-
-      - name: Save state
-        run: echo "VERSION=$(git describe --tags --always)" >> $GITHUB_STATE
-
-      - name: Set output
-        run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
