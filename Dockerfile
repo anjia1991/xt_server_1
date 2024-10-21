@@ -5,8 +5,8 @@ WORKDIR /admin
 # Set timezone
 ENV TZ="UTC"
 
-# Install netcat-openbsd
-RUN apt-get update && apt-get install -y netcat-openbsd
+# Install netcat-openbsd and MySQL client
+RUN apt-get update && apt-get install -y netcat-openbsd default-mysql-client
 
 # Add label to connect the repository
 LABEL org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY}"
